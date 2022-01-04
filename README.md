@@ -47,7 +47,7 @@ x*y=(a*c)*2**(b+d);
 ```c
 x/y=(a/c)*2**(b-d);
 ```
-Where / indicates integer division
+Where (a/c) is integer division
 ### Square Roots
 ```c
 sqrt(x)=int_sqrt(a)*2**(b/2);
