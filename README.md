@@ -26,30 +26,31 @@ while avoiding the tedious and gory details seen in the code.
 
 We can represent a float x, with two ints a,b in the following way.
 
-```
+```c
 int a,b,c,d;
 float x=a*2**b;
 float y=c*2**d;
 ```
 Where `2**b` means 2 raised to the power of b.
 ### Addition and Subtraction
-```
+```c
 if(x>y){
-	x+y=(a+(c>>(b-d)))*2**b
+	x+y=(a+(c>>(b-d)))*2**b;
+	x-y=(a-(c>>(b-d)))*2**b;
 }
 ```
 ### Multiplication
-```
-x*y=(a*c)*2**(b+d)
+```c
+x*y=(a*c)*2**(b+d);
 ```
 ### Division
-```
-x/y=(a/c)*2**(b-d)
+```c
+x/y=(a/c)*2**(b-d);
 ```
 Where / indicates integer division
 ### Square Roots
-```
-sqrt(x)=int_sqrt(a)*2**(b/2)
+```c
+sqrt(x)=int_sqrt(a)*2**(b/2);
 ```
 
 
