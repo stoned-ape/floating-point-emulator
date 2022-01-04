@@ -7,7 +7,7 @@ sym: main.v makefile
 	iverilog -o sym -Wall main.v
 
 bin: main.c makefile
-	clang $(cflags) $(includes) main.c -o bin
+	clang $(cflags) main.c -o bin
 
 runsym: sym 
 	./sym
