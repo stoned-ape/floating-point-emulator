@@ -1,16 +1,21 @@
 name: GitHub Actions Demo
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  build-and-run:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-      - run: uname -a
-      - run: id
-      - run: hostname
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
       - name: build and run tests
         run: make runbin
+  other-stuff:
+    runs-on: ubuntu-latest
+    steps:
+      - run: uname -a
+      - run: id
+      - run: hostname
+      - run: ls
+      
