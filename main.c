@@ -697,7 +697,9 @@ int main(){
 		fails+=fsqrt_test(tests[i]);
 		ntests++;
 	}
+	fails++;
 	printf("%d tests failed out of %d\n",fails,ntests);
+	return fails;
 }
 
 
