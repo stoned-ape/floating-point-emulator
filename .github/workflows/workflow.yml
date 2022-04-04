@@ -7,6 +7,8 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
       - run: uname -a
+      - run: id
+      - run: hostname
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
