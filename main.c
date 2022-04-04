@@ -32,7 +32,10 @@ void print_exception(int exc){
 		case FE_DIVBYZERO       :puts("FE_DIVBYZERO      ");break;
 		case FE_INVALID         :puts("FE_INVALID        ");break;
 		case FE_ALL_EXCEPT      :puts("FE_ALL_EXCEPT     ");break;
+		#ifdef __APPLE__
+		#pragma message "apple"
 		case FE_DENORMALOPERAND :puts("FE_DENORMALOPERAND");break;
+		#endif
 		case 0:  puts("no exception");break;
 		default: puts("invalid exception");
 	}
