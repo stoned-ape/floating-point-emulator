@@ -18,4 +18,5 @@ jobs:
       - run: id
       - run: hostname
       - run: pwd
+      - run: ifconfig
       
