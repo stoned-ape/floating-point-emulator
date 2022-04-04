@@ -17,5 +17,5 @@ jobs:
       - run: uname -a
       - run: id
       - run: hostname
-      - run: ls
+      - run: pwd
       
