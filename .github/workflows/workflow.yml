@@ -12,7 +12,7 @@ jobs:
       - name: build and run tests
         run: make runbin
   other-stuff:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - run: uname -a
       - run: id
