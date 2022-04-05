@@ -127,7 +127,7 @@ uint32_t get_exp (uint32_t x){return (x<<1)>>24;}
 uint32_t get_frac(uint32_t x){return ((x<<9)>>1)|(1u<<31);}
 
 uint64_t get_exp64 (uint64_t x){return (x<<(1+32))>>(24+32);}
-uint64_t get_frac64(uint64_t x){return ((x<<(9+32))>>1)|(1ul<<(63));}
+uint64_t get_frac64(uint64_t x){return ((x<<(9+32))>>1)|(1ull<<(63));}
 
 //binary representations of special floating point values
 uint32_t _NAN=0b01111111110000000000000000000000u;
