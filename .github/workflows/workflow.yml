@@ -2,7 +2,7 @@
 name: GitHub Actions Demo
 on: [push]
 jobs:
-  build-and-run:
+  linux:
     runs-on: ubuntu-latest
     steps:
       - run: uname -a
@@ -10,7 +10,7 @@ jobs:
         uses: actions/checkout@v3
       - name: build and run tests
         run: make runbin
-  other-stuff:
+  mac:
     runs-on: macos-latest
     steps:
       - run: uname -a
@@ -18,4 +18,13 @@ jobs:
         uses: actions/checkout@v3
       - name: build and run tests
         run: make runbin
+  windows:
+      runs-on: windows-latest
+      steps:
+        - run: uname -a
+        - name: Check out repository code
+          uses: actions/checkout@v3
+        - name: build and run tests
+          run: make runbin
+  
       
