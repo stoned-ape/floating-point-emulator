@@ -12,6 +12,7 @@ extern "C"{
 #include <fenv.h>
 #include <math.h>
 #include <limits.h>
+#include <stdint.h>
 
 //returns true if the distance between a and b is
 //at most idx smallest possible steps
@@ -33,7 +34,6 @@ void print_exception(int exc){
 		case FE_INVALID         :puts("FE_INVALID        ");break;
 		case FE_ALL_EXCEPT      :puts("FE_ALL_EXCEPT     ");break;
 		#ifdef __APPLE__
-		#pragma message "apple"
 		case FE_DENORMALOPERAND :puts("FE_DENORMALOPERAND");break;
 		#endif
 		case 0:  puts("no exception");break;
@@ -45,14 +45,14 @@ void print_exception(int exc){
 #define bit_cast(type,f) (*(type*)&(f))
 
 //returns the n'th bit of x (zero indexed)
-#define get_bit(x,n)   (bit_cast(unsigned     ,x)<<(31-(n))>>31)
-#define get_bit64(x,n) (bit_cast(unsigned long,x)<<(63-(n))>>63)
+#define get_bit(x,n)   (bit_cast(uint32_t     ,x)<<(31-(n))>>31)
+#define get_bit64(x,n) (bit_cast(uint64_t,x)<<(63-(n))>>63)
 
 
 //returns a string binary representation of a 32 bit value
 char *string32(void *v){
-	unsigned *xp=(unsigned*)v;
-	unsigned x=*xp;
+	uint32_t *xp=(uint32_t*)v;
+	uint32_t x=*xp;
 	char *c=(char*)malloc(33);
 	c[32]=0;
 	for(int i=0;i<32;i++){
@@ -62,35 +62,35 @@ char *string32(void *v){
 	return c;
 }
 
-void _bprint32(unsigned x){
+void _bprint32(uint32_t x){
 	char *c=string32(&x);
 	puts(c);
 	free(c);
 }
 
-#define bprint32(x) _bprint32(bit_cast(unsigned,x))
+#define bprint32(x) _bprint32(bit_cast(uint32_t,x))
 
 //shifts up or down depending on the sign of "shift"
 //the operator "<<" doesnt return zero if the shift amount
 //is greater than the number of bits in x for some reason
 //this avoids that unexpected behavior
-unsigned logical_shift(unsigned x,int shift){
+uint32_t logical_shift(uint32_t x,int shift){
 	if(abs(shift)<32) return shift<0?x>>-shift:x<<shift;
 	return 0;
 }
-unsigned long logical_shift64(unsigned long x,int shift){
+uint64_t logical_shift64(uint64_t x,int shift){
 	if(abs(shift)<64) return shift<0?x>>-shift:x<<shift;
 	return 0;
 }
 
 //convert an integer to an equivalent float in software
 float i2f(int xi){
-	unsigned y=0;
+	uint32_t y=0;
 	if(xi<0){
 		y|=(1u<<31);
 		xi*=-1;
 	}
-	unsigned x=bit_cast(unsigned,xi);
+	uint32_t x=bit_cast(uint32_t,xi);
 	int high=-127;
 	for(int i=30;i>=0;i--){
 		if(get_bit(x,i)){
@@ -123,26 +123,26 @@ bool i2f_test(int x){
 //extract the fractional an exponential components of a float
 //in the float representation, the leading bit of the fractional
 //part is ommitted, so here we must add it back in
-unsigned get_exp (unsigned x){return (x<<1)>>24;}
-unsigned get_frac(unsigned x){return ((x<<9)>>1)|(1u<<31);}
+uint32_t get_exp (uint32_t x){return (x<<1)>>24;}
+uint32_t get_frac(uint32_t x){return ((x<<9)>>1)|(1u<<31);}
 
-unsigned long get_exp64 (unsigned long x){return (x<<(1+32))>>(24+32);}
-unsigned long get_frac64(unsigned long x){return ((x<<(9+32))>>1)|(1ul<<(63));}
+uint64_t get_exp64 (uint64_t x){return (x<<(1+32))>>(24+32);}
+uint64_t get_frac64(uint64_t x){return ((x<<(9+32))>>1)|(1ul<<(63));}
 
 //binary representations of special floating point values
-unsigned _NAN=0b01111111110000000000000000000000u;
-unsigned SNAN=0b11111111110000000000000000000000u;
-unsigned _INF=0b01111111100000000000000000000000u;
-unsigned MINF=0b11111111100000000000000000000000u;
-unsigned _ONE=0b00111111100000000000000000000000u;
-unsigned MONE=0b10111111100000000000000000000000u;
-unsigned MZRO=0b10000000000000000000000000000000u;
+uint32_t _NAN=0b01111111110000000000000000000000u;
+uint32_t SNAN=0b11111111110000000000000000000000u;
+uint32_t _INF=0b01111111100000000000000000000000u;
+uint32_t MINF=0b11111111100000000000000000000000u;
+uint32_t _ONE=0b00111111100000000000000000000000u;
+uint32_t MONE=0b10111111100000000000000000000000u;
+uint32_t MZRO=0b10000000000000000000000000000000u;
 
 int f2i(float f){
-	unsigned x=bit_cast(unsigned,f);
-	unsigned y=0;
+	uint32_t x=bit_cast(uint32_t,f);
+	uint32_t y=0;
 	if(x==_NAN || x==_INF || x==MINF) return 1u<<31;
-	unsigned exp=get_exp(x),frac=get_frac(x);
+	uint32_t exp=get_exp(x),frac=get_frac(x);
 	int shift=(int)exp-127-31;
 	y|=logical_shift(frac,shift);
 	if(get_bit(x,31)) y=~y+1;
@@ -168,10 +168,10 @@ bool f2i_test(float x){
 
 //clears all bits up to but not including bit i
 //rounds up
-unsigned long roundup_ul(unsigned long x,unsigned i){
+uint64_t roundup_ul(uint64_t x,uint32_t i){
 	assert(i<64 && i>0);
-	unsigned long round_bit=get_bit64(x,i-1);
-	unsigned long res=((x>>i)<<i)+(round_bit<<i);
+	uint64_t round_bit=get_bit64(x,i-1);
+	uint64_t res=((x>>i)<<i)+(round_bit<<i);
 	return res;
 }
 
@@ -184,12 +184,12 @@ unsigned long roundup_ul(unsigned long x,unsigned i){
 //	4 and 5 equally close thus we have a tie.
 //	we resolve this tie by chosing the even option
 //	so 4.5 rounds to 4, but 3.5 also rounds 4.
-unsigned assemble_float(unsigned long sign,unsigned long exp,unsigned long frac){
+uint32_t assemble_float(uint64_t sign,uint64_t exp,uint64_t frac){
 	assert((sign>>1)==0);
 	assert((exp>>8)==0);
 	frac>>=8;
-	long unsigned x=0;
-	long unsigned rounded=0,b24=0,cleared=(frac>>32)<<32;
+	uint64_t x=0;
+	uint64_t rounded=0,b24=0,cleared=(frac>>32)<<32;
 	rounded=roundup_ul(frac,32);
 	b24=get_bit64(rounded,24+32);
 	while(b24){
@@ -212,15 +212,15 @@ unsigned assemble_float(unsigned long sign,unsigned long exp,unsigned long frac)
 	return x;
 }
 
-float u2f(unsigned u){return bit_cast(float,u);}
+float u2f(uint32_t u){return bit_cast(float,u);}
 
 float faddsub(float fa,float fb,bool add){
-	unsigned long a=bit_cast(unsigned,fa),b=bit_cast(unsigned,fb);
-	unsigned long c=0;
-	unsigned long aexp=get_exp64(a),bexp=get_exp64(b);
-	unsigned long asign=get_bit64(a,31),bsign=!add^get_bit64(b,31);
-	unsigned long afrac=get_frac64(a)>>1,bfrac=get_frac64(b)>>1;
-	unsigned long cexp=0,cfrac=0,csign=0;
+	uint64_t a=bit_cast(uint32_t,fa),b=bit_cast(uint32_t,fb);
+	uint64_t c=0;
+	uint64_t aexp=get_exp64(a),bexp=get_exp64(b);
+	uint64_t asign=get_bit64(a,31),bsign=!add^get_bit64(b,31);
+	uint64_t afrac=get_frac64(a)>>1,bfrac=get_frac64(b)>>1;
+	uint64_t cexp=0,cfrac=0,csign=0;
 	if(a==_NAN || b==_NAN) return bit_cast(float,_NAN);
 	if(a==_INF && b==MINF) return add?bit_cast(float,_NAN):bit_cast(float,_INF);
 	if(a==MINF && b==_INF) return add?bit_cast(float,_NAN):bit_cast(float,MINF);
@@ -253,7 +253,7 @@ float faddsub(float fa,float fb,bool add){
 		if(aexp==bexp){
 			cfrac=(afrac>bfrac)?afrac-bfrac:bfrac-afrac;
 			cexp=cfrac?aexp+1:0;
-			csign=(unsigned long)((afrac<bfrac)!=asign);
+			csign=(uint64_t)((afrac<bfrac)!=asign);
 		}else if(aexp>bexp){
 			cexp=aexp+1;
 			cfrac=afrac-logical_shift64(bfrac,-(int)(aexp-bexp));
@@ -283,7 +283,7 @@ bool faddsub_test(float a,float b,bool add){
 	float f2=faddsub(a,b,add);
 	if(f1!=f2){
 		if(is_nan(f1) && is_nan(f2)) return false;
-		unsigned xor=bit_cast(unsigned,f1)^bit_cast(unsigned,f2);
+		uint32_t xor=bit_cast(uint32_t,f1)^bit_cast(uint32_t,f2);
 		// if(!(xor>>1)) return false;
 		char *s1=string32(&f1);
 		char *s2=string32(&f2);
@@ -305,7 +305,7 @@ bool faddsub_test(float a,float b,bool add){
 
 
 bool feq(float fa,float fb){
-	unsigned a=bit_cast(unsigned,fa),b=bit_cast(unsigned,fb);
+	uint32_t a=bit_cast(uint32_t,fa),b=bit_cast(uint32_t,fb);
 	if(a==_NAN || b==_NAN) return false;
 	if(a==MZRO && b==0   ) return true;
 	if(a==0    && b==MZRO) return true;
@@ -323,10 +323,10 @@ bool feq_test(float a,float b){
 }
 
 bool flt(float fa,float fb){
-	unsigned a=bit_cast(unsigned,fa),b=bit_cast(unsigned,fb);
-	unsigned aexp=get_exp(a),bexp=get_exp(b);
-	unsigned asign=get_bit(a,31),bsign=get_bit(b,31);
-	unsigned afrac=get_frac(a)>>9,bfrac=get_frac(b)>>9;
+	uint32_t a=bit_cast(uint32_t,fa),b=bit_cast(uint32_t,fb);
+	uint32_t aexp=get_exp(a),bexp=get_exp(b);
+	uint32_t asign=get_bit(a,31),bsign=get_bit(b,31);
+	uint32_t afrac=get_frac(a)>>9,bfrac=get_frac(b)>>9;
 	if(a==_NAN || b==_NAN) return false;
 	if(a==MZRO && b==0   ) return false;
 	if(asign!=bsign) return asign && !bsign;
@@ -349,15 +349,15 @@ bool flt_test(float a,float b){
 
 //mutliply the fractions and add the exponents 
 float fmul(float fa,float fb){
-	unsigned long a=bit_cast(unsigned,fa),b=bit_cast(unsigned,fb);
-	unsigned c=0;
-	unsigned long aexp=get_exp64(a),bexp=get_exp64(b);
-	unsigned long asign=get_bit64(a,31),bsign=get_bit64(b,31);
-	unsigned long afrac=get_frac(a)>>9,bfrac=get_frac(b)>>9;
-	unsigned long cfrac=afrac*bfrac;
+	uint64_t a=bit_cast(uint32_t,fa),b=bit_cast(uint32_t,fb);
+	uint32_t c=0;
+	uint64_t aexp=get_exp64(a),bexp=get_exp64(b);
+	uint64_t asign=get_bit64(a,31),bsign=get_bit64(b,31);
+	uint64_t afrac=get_frac(a)>>9,bfrac=get_frac(b)>>9;
+	uint64_t cfrac=afrac*bfrac;
 	assert(cfrac/afrac==bfrac);
 	assert(cfrac/bfrac==afrac);
-	unsigned long cexp=(aexp+bexp)+256-127+19,csign=asign^bsign;
+	uint64_t cexp=(aexp+bexp)+256-127+19,csign=asign^bsign;
 	if(a==_NAN || b==_NAN) return bit_cast(float,_NAN);
 	if(a==_INF && b==MINF) return bit_cast(float,MINF);
 	if(a==MINF && b==_INF) return bit_cast(float,MINF);
@@ -395,7 +395,7 @@ bool fmul_test(float a,float b){
 	float f2=fmul(a,b);
 	if(f1!=f2){
 		if(is_nan(f1) && is_nan(f2)) return false;
-		unsigned xor=bit_cast(unsigned,f1)^bit_cast(unsigned,f2);
+		uint32_t xor=bit_cast(uint32_t,f1)^bit_cast(uint32_t,f2);
 		if(dist_lt(f1,f2,3)) return false;
 		char *s1=string32(&f1);
 		char *s2=string32(&f2);
@@ -426,14 +426,14 @@ bool fmul_test(float a,float b){
 
 //divide the factions and subtract the exponents
 float fdiv(float fa,float fb){
-	unsigned long a=bit_cast(unsigned,fa),b=bit_cast(unsigned,fb);
-	unsigned c=0;
-	long aexp=get_exp64(a),bexp=get_exp64(b);
-	unsigned long asign=get_bit64(a,31),bsign=get_bit64(b,31);
-	unsigned long afrac=get_frac64(a),bfrac=get_frac(b)>>9;
+	uint64_t a=bit_cast(uint32_t,fa),b=bit_cast(uint32_t,fb);
+	uint32_t c=0;
+	int64_t aexp=get_exp64(a),bexp=get_exp64(b);
+	uint64_t asign=get_bit64(a,31),bsign=get_bit64(b,31);
+	uint64_t afrac=get_frac64(a),bfrac=get_frac(b)>>9;
 	// aexp-=63;
 	bexp-=31-9;
-	unsigned long csign=asign^bsign;
+	uint64_t csign=asign^bsign;
 	if(a==_NAN || b==_NAN) return bit_cast(float,_NAN);
 	if(a==_INF && b==MINF) return bit_cast(float,_NAN);
 	if(a==MINF && b==_INF) return bit_cast(float,_NAN);
@@ -457,8 +457,8 @@ float fdiv(float fa,float fb){
 		bfrac>>=1;
 		bexp++;
 	}
-	unsigned long cfrac=afrac/bfrac;
-	long cexp=((aexp-127)-(bexp-127))+127;
+	uint64_t cfrac=afrac/bfrac;
+	int64_t cexp=((aexp-127)-(bexp-127))+127;
 
 	while(cfrac!=0 && !get_bit64(cfrac,63)){
 		cfrac<<=1;
@@ -466,7 +466,7 @@ float fdiv(float fa,float fb){
 		assert(cexp!=0);
 	}
 	cexp=cexp>0?cexp:0;
-	c=assemble_float(csign,(unsigned long)cexp,cfrac);
+	c=assemble_float(csign,(uint64_t)cexp,cfrac);
 	return bit_cast(float,c);
 }
 
@@ -480,7 +480,7 @@ bool fdiv_test(float a,float b){
 	float f2=fdiv(a,b);
 	if(f1!=f2){
 		if(is_nan(f1) && is_nan(f2)) return false;
-		unsigned xor=bit_cast(unsigned,f1)^bit_cast(unsigned,f2);
+		uint32_t xor=bit_cast(uint32_t,f1)^bit_cast(uint32_t,f2);
 		// if(!(xor>>1)) return false;
 		if(dist_lt(f1,f2,2)) return false;
 		char *s1=string32(&f1);
@@ -510,8 +510,8 @@ bool fdiv_test(float a,float b){
 
 //O(sqrt(x)) can we do better?
 //only slighly better than a linear search (no multiplies)
-long lin_sqrt(long x){
-	long i=0;
+int64_t lin_sqrt(int64_t x){
+	int64_t i=0;
 	while(x>0){
 		x-=(i<<2)+1;
 		i++;
@@ -520,9 +520,9 @@ long lin_sqrt(long x){
 }
 
 //O(log2(x)), much better
-unsigned long bin_sqrt(unsigned long x){
-	unsigned long lo=0,hi=x+1,mid=0;
-	unsigned long p=4;
+uint64_t bin_sqrt(uint64_t x){
+	uint64_t lo=0,hi=x+1,mid=0;
+	uint64_t p=4;
 	while(x>p && p<ULONG_MAX>>2){
 		hi>>=1;
 		p<<=2;
@@ -530,7 +530,7 @@ unsigned long bin_sqrt(unsigned long x){
 	while(lo<hi-1){
 		mid=lo+(hi-lo)/2;
 		// printf("%ld \t %ld \t %ld\n",lo,mid,hi);
-		unsigned long sq=mid*mid;
+		uint64_t sq=mid*mid;
 		if(sq==x) return mid;
 		if(sq<x) lo=mid;
 		else     hi=mid;
@@ -541,15 +541,15 @@ unsigned long bin_sqrt(unsigned long x){
 //divide the exponent by two and compute the integer square
 //root of the fractional part
 float fsqrt(float fx){
-	unsigned long x=bit_cast(unsigned,fx);
-	long xexp=get_exp64(x);
-	unsigned long xsign=get_bit64(x,31);
+	uint64_t x=bit_cast(uint32_t,fx);
+	int64_t xexp=get_exp64(x);
+	uint64_t xsign=get_bit64(x,31);
 	int shift=1;
-	unsigned long xfrac=get_frac64(x)>>shift;
+	uint64_t xfrac=get_frac64(x)>>shift;
 	xexp-=(63-shift);
-	unsigned y=0;
-	long yexp=0;
-	unsigned long yfrac=0;
+	uint32_t y=0;
+	int64_t yexp=0;
+	uint64_t yfrac=0;
 	if(x==_NAN) return bit_cast(float,_NAN);
 	if(x==0   ) return u2f(0);
 	if(x==MZRO) return bit_cast(float,MZRO);
@@ -567,7 +567,7 @@ float fsqrt(float fx){
 		yexp-=1;
 		assert(yexp!=0);
 	}
-	y=assemble_float(0,(unsigned long)yexp,yfrac);
+	y=assemble_float(0,(uint64_t)yexp,yfrac);
 	return bit_cast(float,y);
 }
 
@@ -578,8 +578,8 @@ bool fsqrt_test(float a){
 	float f2=fsqrt(a);
 	if(f1!=f2){
 		if(is_nan(f1) && is_nan(f2)) return false;
-		unsigned rf1=bit_cast(unsigned,f1),rf2=bit_cast(unsigned,f2);
-		unsigned xor=rf1^rf2;
+		uint32_t rf1=bit_cast(uint32_t,f1),rf2=bit_cast(uint32_t,f2);
+		uint32_t xor=rf1^rf2;
 		// if(!(xor<<9)) return false;
 		// if(dist_lt(f1,f2,2)) return false;
 		char *s1=string32(&f1);
@@ -620,8 +620,8 @@ void print_rounding_mode(){
 
 
 int main(){
-	for(long i=0;i<10000;i++){
-		long rt=bin_sqrt(i*i);
+	for(int64_t i=0;i<10000;i++){
+		int64_t rt=bin_sqrt(i*i);
 		// printf("sqrt(%ld) = %ld\n",i*i,rt);
 		assert(rt==i);
 	}
