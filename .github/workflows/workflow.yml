@@ -5,19 +5,17 @@ jobs:
   build-and-run:
     runs-on: ubuntu-latest
     steps:
+      - run: uname -a
       - name: Check out repository code
         uses: actions/checkout@v3
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
       - name: build and run tests
         run: make runbin
   other-stuff:
     runs-on: macos-latest
     steps:
       - run: uname -a
-      - run: id
-      - run: hostname
-      - run: pwd
-      - run: ifconfig
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: build and run tests
+        run: make runbin
       
